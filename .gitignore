@@ -1,0 +1,78 @@
+# ------------------------------
+# Secrets and local environment
+# ------------------------------
+.env
+.env.*
+!.env.example
+
+keys.json
+*.pem
+*.key
+*.crt
+
+# ------------------------------
+# Python bytecode and caches
+# ------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ------------------------------
+# Virtual environments
+# ------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# ------------------------------
+# Coverage, build, packaging
+# ------------------------------
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# ------------------------------
+# Editor / OS clutter
+# ------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Local runtime artifacts
+# ------------------------------
+*.log
+.cache/
+tmp/
+temp/
+playwright-report/
+test-results/
+
+# ------------------------------
+# PT IQ runtime data
+# Regenerable, bulky, or sensitive
+# ------------------------------
+data/raw/
+data/processed/
+data/logs/
+
+# ------------------------------
+# Prospect/customer-facing demo outputs
+# Keep private by default
+# ------------------------------
+demos/**
+
+# Allow placeholders or repo notes if needed
+!demos/.gitkeep
+!demos/README.md
