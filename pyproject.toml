@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "primordial-tender-iq"
+version = "0.1.0"
+description = "Reverse-search tender intelligence engine for tender ingestion, IBP extraction, business DNA generation, and semantic tender matching."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4",
+    "fastembed",
+    "groq",
+    "pdfplumber",
+    "python-docx",
+    "python-dotenv",
+    "qdrant-client",
+    "requests",
+]
+
+[project.optional-dependencies]
+ocr = [
+    "pytesseract",
+]
+browser = [
+    "playwright",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ptiq*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]

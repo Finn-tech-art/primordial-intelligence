@@ -1,0 +1,16 @@
+{
+  "keys": [
+    {
+      "label": "primary-groq-01",
+      "provider": "groq",
+      "api_key": "gsk_your_first_key_here",
+      "enabled": true
+    },
+    {
+      "label": "primary-groq-02",
+      "provider": "groq",
+      "api_key": "gsk_your_second_key_here",
+      "enabled": true
+    }
+  ]
+}
