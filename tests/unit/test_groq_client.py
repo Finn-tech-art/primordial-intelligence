@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from ptiq.core.groq_client import PTIQGroqClient, TaskProfile
+import pytest
+
+from ptiq.core.groq_client import PTIQGroqClient, TaskProfile, resolve_groq_base_url
 from ptiq.core.keymaster import KeyMaster
 
 
@@ -239,3 +241,13 @@ def test_success_updates_live_rate_limit_state_from_headers(tmp_path: Path) -> N
     assert state.remaining_requests == 17
     assert state.reset_tokens_at is not None
     assert state.reset_requests_at is not None
+
+
+def test_resolve_groq_base_url_rejects_unapproved_host_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GROQ_BASE_URL", "https://evil.example.com/openai/v1")
+    monkeypatch.delenv("GROQ_ALLOW_CUSTOM_BASE_URL", raising=False)
+
+    with pytest.raises(ValueError, match="unapproved host"):
+        resolve_groq_base_url()
