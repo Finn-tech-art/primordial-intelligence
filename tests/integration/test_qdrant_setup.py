@@ -1,6 +1,6 @@
 import uuid
 
-from ptiq.core.qdrant_setup import build_default_store
+from ptiq.core.qdrant_setup import build_test_store
 
 
 VECTOR_SIZE = 384
@@ -15,7 +15,7 @@ def seed_from_uuid(value: uuid.UUID) -> float:
 
 
 def test_qdrant_upsert_and_similarity_search() -> None:
-    store = build_default_store()
+    store = build_test_store()
 
     summary = store.ensure_collections()
     assert store.tender_spec.name in summary

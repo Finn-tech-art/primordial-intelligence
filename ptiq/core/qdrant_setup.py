@@ -11,6 +11,7 @@ into ptiq/core/qdrant_store.py and this file can remain as a thin setup entrypoi
 from __future__ import annotations
 
 import os
+import uuid
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional, Sequence
 
@@ -18,6 +19,10 @@ from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
 
 
+DEFAULT_TENDER_COLLECTION = "tender_library"
+DEFAULT_BUSINESS_COLLECTION = "business_dna"
+DEFAULT_TEST_TENDER_COLLECTION = "tender_library_test"
+DEFAULT_TEST_BUSINESS_COLLECTION = "business_dna_test"
 DEFAULT_VECTOR_SIZE = 384
 DEFAULT_DISTANCE = models.Distance.COSINE
 DEFAULT_TIMEOUT_SECONDS = 30.0
@@ -74,7 +79,14 @@ class PTIQQdrantStore:
         self.business_spec = CollectionSpec(name=business_collection, vector_size=vector_size)
 
     @classmethod
-    def from_env(cls) -> "PTIQQdrantStore":
+    def from_env(
+        cls,
+        *,
+        tender_collection_env: str = "QDRANT_TENDER_COLLECTION",
+        business_collection_env: str = "QDRANT_BUSINESS_COLLECTION",
+        default_tender_collection: str = DEFAULT_TENDER_COLLECTION,
+        default_business_collection: str = DEFAULT_BUSINESS_COLLECTION,
+    ) -> "PTIQQdrantStore":
         load_dotenv()
 
         url = os.getenv("QDRANT_URL", "").strip()
@@ -82,8 +94,8 @@ class PTIQQdrantStore:
             raise QdrantSetupError("QDRANT_URL is required to connect to Qdrant.")
 
         api_key = os.getenv("QDRANT_API_KEY")
-        tender_collection = os.getenv("QDRANT_TENDER_COLLECTION", "tender_library")
-        business_collection = os.getenv("QDRANT_BUSINESS_COLLECTION", "business_dna")
+        tender_collection = os.getenv(tender_collection_env, default_tender_collection)
+        business_collection = os.getenv(business_collection_env, default_business_collection)
         timeout_seconds = float(os.getenv("QDRANT_TIMEOUT_SECONDS", str(DEFAULT_TIMEOUT_SECONDS)))
         vector_size = int(os.getenv("QDRANT_VECTOR_SIZE", str(DEFAULT_VECTOR_SIZE)))
 
@@ -95,23 +107,6 @@ class PTIQQdrantStore:
             vector_size=vector_size,
             timeout_seconds=timeout_seconds,
         )
-    def _validate_vector(self, vector: Sequence[float]) -> None:
-        if not vector:
-            raise ValueError("Vector must not be empty.")
-
-        expected_size = self.tender_spec.vector_size
-        actual_size = len(vector)
-
-        if actual_size != expected_size:
-            raise ValueError(
-                f"Vector length mismatch: expected {expected_size}, received {actual_size}."
-            )
-
-        for index, value in enumerate(vector):
-            if not isinstance(value, (int, float)):
-                raise TypeError(
-                    f"Vector contains a non-numeric value at index {index}: {value!r}"
-                )
 
 
 
@@ -225,6 +220,7 @@ class PTIQQdrantStore:
         wait: bool = True,
     ) -> Any:
         self._validate_vector(vector)
+        self._validate_point_id(point_id)
 
         point = models.PointStruct(
             id=point_id,
@@ -374,6 +370,29 @@ class PTIQQdrantStore:
                 f"Vector length mismatch: expected {expected_size}, received {actual_size}."
             )
 
+        for index, value in enumerate(vector):
+            if not isinstance(value, (int, float)):
+                raise TypeError(
+                    f"Vector contains a non-numeric value at index {index}: {value!r}"
+                )
+
+    def _validate_point_id(self, point_id: str | int) -> None:
+        if isinstance(point_id, int):
+            if point_id < 0:
+                raise ValueError("Qdrant point IDs must be unsigned integers or UUID strings.")
+            return
+
+        if isinstance(point_id, str):
+            try:
+                uuid.UUID(point_id)
+            except ValueError as exc:
+                raise ValueError(
+                    "Qdrant point IDs must be unsigned integers or UUID strings."
+                ) from exc
+            return
+
+        raise TypeError("Qdrant point IDs must be integers or UUID strings.")
+
     def _normalize_vector(self, vector: Any) -> Optional[list[float]]:
         if vector is None:
             return None
@@ -390,6 +409,15 @@ class PTIQQdrantStore:
 
 def build_default_store() -> PTIQQdrantStore:
     return PTIQQdrantStore.from_env()
+
+
+def build_test_store() -> PTIQQdrantStore:
+    return PTIQQdrantStore.from_env(
+        tender_collection_env="QDRANT_TEST_TENDER_COLLECTION",
+        business_collection_env="QDRANT_TEST_BUSINESS_COLLECTION",
+        default_tender_collection=DEFAULT_TEST_TENDER_COLLECTION,
+        default_business_collection=DEFAULT_TEST_BUSINESS_COLLECTION,
+    )
 
 
 def main() -> None:

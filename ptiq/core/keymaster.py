@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Mapping, Optional, TypedDict
@@ -35,7 +35,7 @@ class NoEligibleKeyError(RuntimeError):
 class KeyState:
     label: str
     provider: str
-    api_key: str
+    api_key: str = field(repr=False)
     enabled: bool = True
 
     remaining_tokens: Optional[int] = None

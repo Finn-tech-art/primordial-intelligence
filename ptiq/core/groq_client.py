@@ -16,6 +16,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence
+from urllib.parse import urlparse
 
 import requests
 
@@ -23,6 +24,7 @@ from .keymaster import KeyMaster, NoEligibleKeyError
 
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_ALLOWED_HOSTS = frozenset({"api.groq.com"})
 OVERSIZED_ERROR_SNIPPETS = (
     "requested too many tokens",
     "requested tokens",
@@ -492,6 +494,31 @@ def default_task_profiles() -> dict[str, TaskProfile]:
     }
 
 
+def resolve_groq_base_url() -> str:
+    raw_base_url = os.getenv("GROQ_BASE_URL", GROQ_BASE_URL).strip()
+    allow_custom = os.getenv("GROQ_ALLOW_CUSTOM_BASE_URL", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    parsed = urlparse(raw_base_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ValueError("GROQ_BASE_URL must be an absolute URL.")
+
+    if parsed.scheme != "https":
+        raise ValueError("GROQ_BASE_URL must use HTTPS.")
+
+    if not allow_custom and parsed.hostname not in GROQ_ALLOWED_HOSTS:
+        raise ValueError(
+            "GROQ_BASE_URL points to an unapproved host. "
+            "Set GROQ_ALLOW_CUSTOM_BASE_URL=true only when you intentionally need a custom endpoint."
+        )
+
+    return raw_base_url.rstrip("/")
+
+
 def build_default_client() -> PTIQGroqClient:
     keys_path = os.getenv("GROQ_KEYS_PATH", "keys.json")
     reserve_tokens = int(os.getenv("GROQ_TOKEN_SAFETY_MARGIN", "500"))
@@ -505,7 +532,7 @@ def build_default_client() -> PTIQGroqClient:
     return PTIQGroqClient(
         keymaster=keymaster,
         task_profiles=default_task_profiles(),
-        base_url=os.getenv("GROQ_BASE_URL", GROQ_BASE_URL),
+        base_url=resolve_groq_base_url(),
         default_timeout_seconds=timeout_seconds,
     )
 
